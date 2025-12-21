@@ -11,18 +11,141 @@ const devInfo = document.getElementById('dev-info');
 const devLog = document.getElementById('dev-log');
 const soundBtn = document.getElementById('sound-control');
 const likeBtn = document.getElementById('like-btn');
+const repostBtn = document.getElementById('repost-btn');
 const tabFollowing = document.getElementById('tab-following');
 const tabForYou = document.getElementById('tab-foryou');
 const profileView = document.getElementById('profile-view');
 const profileBackBtn = document.getElementById('profile-back');
-const navHome = document.getElementById('nav-home');
-const navProfile = document.getElementById('nav-profile');
+const profileTabs = document.querySelectorAll('.profile-tabs .tab');
 
 let isMuted = true; // Start muted by default (modern browser policy friendly)
 
 let currentIndex = 0;
 let isScrolling = false;
 let scrollTimeout = null;
+
+// Likes & Reposts State Management
+let likedPlayables = new Set();
+let repostedPlayables = new Set();
+let currentProfileTab = 'likes';
+
+// Load likes from localStorage
+function loadLikes() {
+    try {
+        const stored = localStorage.getItem('indieMatchLikes');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            likedPlayables = new Set(parsed);
+            logDev(`Loaded ${likedPlayables.size} likes`);
+        }
+    } catch (e) {
+        console.error('Error loading likes:', e);
+    }
+}
+
+// Save likes to localStorage
+function saveLikes() {
+    try {
+        const array = Array.from(likedPlayables);
+        localStorage.setItem('indieMatchLikes', JSON.stringify(array));
+    } catch (e) {
+        console.error('Error saving likes:', e);
+    }
+}
+
+// Load reposts from localStorage
+function loadReposts() {
+    try {
+        const stored = localStorage.getItem('indieMatchReposts');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            repostedPlayables = new Set(parsed);
+            logDev(`Loaded ${repostedPlayables.size} reposts`);
+        }
+    } catch (e) {
+        console.error('Error loading reposts:', e);
+    }
+}
+
+// Save reposts to localStorage
+function saveReposts() {
+    try {
+        const array = Array.from(repostedPlayables);
+        localStorage.setItem('indieMatchReposts', JSON.stringify(array));
+    } catch (e) {
+        console.error('Error saving reposts:', e);
+    }
+}
+
+// Toggle like for current playable
+function toggleLike() {
+    const currentItem = config.playables[currentIndex];
+    if (!currentItem) return;
+
+    const isLiked = likedPlayables.has(currentItem.id);
+
+    if (isLiked) {
+        likedPlayables.delete(currentItem.id);
+        showToast("Unliked!");
+    } else {
+        likedPlayables.add(currentItem.id);
+        showToast("Liked!");
+    }
+
+    saveLikes();
+    updateLikeButton();
+    updateProfileGrid();
+}
+
+// Toggle repost for current playable
+function toggleRepost() {
+    const currentItem = config.playables[currentIndex];
+    if (!currentItem) return;
+
+    const isReposted = repostedPlayables.has(currentItem.id);
+
+    if (isReposted) {
+        repostedPlayables.delete(currentItem.id);
+        showToast("Removed Repost");
+    } else {
+        repostedPlayables.add(currentItem.id);
+        showToast("Reposted!");
+    }
+
+    saveReposts();
+    updateRepostButton();
+    updateProfileGrid();
+}
+
+// Update like button appearance based on current playable
+function updateLikeButton() {
+    const currentItem = config.playables[currentIndex];
+    if (!currentItem) return;
+
+    const isLiked = likedPlayables.has(currentItem.id);
+    const heartIcon = likeBtn.querySelector('.heart-icon');
+
+    if (heartIcon) {
+        heartIcon.style.color = isLiked ? '#fe2c55' : 'white';
+    }
+}
+
+// Update repost button appearance
+function updateRepostButton() {
+    const currentItem = config.playables[currentIndex];
+    if (!currentItem) return;
+
+    const isReposted = repostedPlayables.has(currentItem.id);
+    const repostIcon = repostBtn.querySelector('.repost-icon');
+
+    if (repostIcon) {
+        if (isReposted) {
+            repostIcon.classList.add('repost-active');
+        } else {
+            repostIcon.classList.remove('repost-active');
+        }
+    }
+}
 
 function logDev(msg) {
     devLog.textContent = msg;
@@ -34,6 +157,25 @@ function logDev(msg) {
 function updateDevInfo() {
     const item = config.playables[currentIndex];
     devInfo.innerHTML = `Idx: ${currentIndex} <br> ID: ${item?.id} <br> Path: ${item?.path}`;
+    updateFeedInfo(item);
+}
+
+function updateFeedInfo(item) {
+    if (!item) return;
+
+    const bottomInfo = document.querySelector('.bottom-info');
+    if (!bottomInfo) return;
+
+    const usernameEl = bottomInfo.querySelector('.username');
+    const descEl = bottomInfo.querySelector('.description');
+
+    // Use metadata if available, else static defaults
+    const publisher = item.publisher || 'Indie Match';
+    const gameName = item.gameName || 'Indie Game';
+
+    // Using formatted text for aesthetics
+    if (usernameEl) usernameEl.textContent = `@${publisher.replace(/\s+/g, '').toLowerCase()}`;
+    if (descEl) descEl.innerHTML = `Playing <b>${gameName}</b> <br> Swipe right to play nicely! <span class="tag">#demo</span>`;
 }
 
 const loadingOverlay = document.getElementById('loading-overlay');
@@ -44,6 +186,73 @@ function showLoading() {
 
 function hideLoading() {
     loadingOverlay.classList.add('hidden');
+}
+
+// Update Profile Grid (Likes or Reposts)
+function updateProfileGrid() {
+    const gridContainer = document.querySelector('.video-grid');
+    if (!gridContainer) return;
+
+    // Clear existing items
+    gridContainer.innerHTML = '';
+
+    const sourceSet = currentProfileTab === 'likes' ? likedPlayables : repostedPlayables;
+    const emptyMsg = currentProfileTab === 'likes' ? 'No likes yet' : 'No reposts yet';
+    const emptySub = currentProfileTab === 'likes' ? 'Like playables to see them here' : 'Repost playables to see them here';
+
+    // If no items, show empty state
+    if (sourceSet.size === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'empty-likes-state';
+        emptyState.innerHTML = `
+            <div class="empty-icon">${currentProfileTab === 'likes' ? '♥' : '↻'}</div>
+            <p>${emptyMsg}</p>
+            <p class="empty-subtitle">${emptySub}</p>
+        `;
+        gridContainer.appendChild(emptyState);
+        return;
+    }
+
+    // Add items to grid
+    sourceSet.forEach(playableId => {
+        const playable = config.playables.find(p => p.id === playableId);
+        if (!playable) return;
+
+        const gridItem = document.createElement('div');
+        gridItem.className = 'grid-item';
+        gridItem.dataset.playableId = playableId;
+
+        // Use thumbnail as background if available
+        if (playable.thumbnail) {
+            gridItem.style.backgroundImage = `url(${playable.thumbnail})`;
+            gridItem.style.backgroundSize = 'cover';
+            gridItem.style.backgroundPosition = 'center';
+        }
+
+        // Add play icon overlay and optional label (only if no thumbnail, or as overlay)
+        // Design choice: Show play icon always, maybe hide text if thumbnail exists?
+        // Let's keep text but make it subtle gradient bottom, or just play icon.
+        // User asked to replace "small black screen" with image.
+
+        gridItem.innerHTML = `
+            <div class="grid-overlay">
+                <div class="grid-play-icon">▶</div>
+                <div class="grid-label">${playable.gameName || playable.id.toUpperCase()}</div>
+            </div>
+        `;
+
+        // Click handler to navigate to that playable
+        gridItem.addEventListener('click', () => {
+            const index = config.playables.findIndex(p => p.id === playableId);
+            if (index !== -1) {
+                scrollToIndex(index);
+                hideProfile();
+                showToast(`Playing ${playable.gameName || playable.id}`);
+            }
+        });
+
+        gridContainer.appendChild(gridItem);
+    });
 }
 
 // Initialize Feed
@@ -88,6 +297,14 @@ function init() {
     loadNearbyIframes(0);
     updateDevInfo();
 
+    // Load likes and update UI
+    // Load likes/reposts and update UI
+    loadLikes();
+    loadReposts();
+    updateLikeButton();
+    updateRepostButton();
+    updateProfileGrid();
+
     // Attach edge listeners
     attachEdgeListeners();
     attachUIListeners();
@@ -104,14 +321,28 @@ function attachUIListeners() {
     // Profile Back
     profileBackBtn.addEventListener('click', hideProfile);
 
-    // Bottom Nav
-    navHome.addEventListener('click', hideProfile);
-    navProfile.addEventListener('click', showProfile);
-
     // Like Button
     likeBtn.addEventListener('click', () => {
         animateHeart(window.innerWidth / 2, window.innerHeight / 2);
-        showToast("Liked!");
+        toggleLike();
+    });
+
+    // Repost Button
+    repostBtn.addEventListener('click', () => {
+        toggleRepost();
+    });
+
+    // Profile Tabs
+    profileTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active state
+            profileTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            // Switch content
+            currentProfileTab = tab.dataset.tab;
+            updateProfileGrid();
+        });
     });
 
     // Double Tap on Feed
@@ -129,6 +360,9 @@ function attachUIListeners() {
         }
         lastTap = currentTime;
     });
+
+    // Explicitly attach wheel to Profile View to ensure capture
+    profileView.addEventListener('wheel', handleWheel, { passive: false });
 }
 
 function toggleMute() {
@@ -191,7 +425,7 @@ function loadNearbyIframes(index) {
 }
 
 // Scroll Snap Detection
-feedContainer.addEventListener('scroll', () => {
+feedContainer.addEventListener('scroll', (e) => {
     // Debounce/Throttle index calculation
     if (scrollTimeout) clearTimeout(scrollTimeout);
 
@@ -203,6 +437,10 @@ feedContainer.addEventListener('scroll', () => {
         if (newIndex !== currentIndex) {
             currentIndex = newIndex;
             updateDevInfo();
+            currentIndex = newIndex;
+            updateDevInfo();
+            updateLikeButton(); // Update like button state
+            updateRepostButton(); // Update repost button state
             showLoading(); // Show when switching, will hide if already loaded or when distinct load event fires
 
             setTimeout(() => hideLoading(), 500);
@@ -234,6 +472,13 @@ let isDragging = false;
 let isScrollingGesture = false; // Vertical scroll
 let isInteractingGesture = false; // Horizontal/Game interaction
 let activeFrame = null;
+let gestureStartX = 0;
+let gestureStartY = 0;
+let isSwipeLocked = false;
+
+// Global State for Profile
+let isProfileVisible = false; // Source of truth
+
 
 // Mouse Support for Desktop Dragging
 function attachMouseListeners() {
@@ -255,6 +500,121 @@ function attachMouseListeners() {
     window.addEventListener('mouseup', (e) => {
         handlePointerEnd(e);
     });
+
+    // Trackpad / Wheel Support
+    window.addEventListener('wheel', handleWheel, { passive: false });
+}
+
+let wheelTimeout;
+let wheelTranslatePercent = 100; // 100% means closed (hidden-right)
+
+
+
+function handleWheel(e) {
+    // Check if this is a horizontal swipe (two-finger left/right on trackpad)
+    const isHorizontalSwipe = Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 2;
+
+    // If it's a horizontal swipe, always allow it (for profile navigation)
+    if (isHorizontalSwipe) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Debug info
+        const dir = e.deltaX > 0 ? 'Right→' : 'Left←';
+        const domOpen = !profileView.classList.contains('hidden-right');
+
+        if (!wheelTimeout) {
+            // Starting a new gesture sequence
+            // Always check current DOM state fresh
+            const currentTransform = profileView.style.transform;
+            const hasTransform = currentTransform && currentTransform !== '';
+
+            if (hasTransform) {
+                // Extract the current percentage from transform
+                const match = currentTransform.match(/translateX\(([0-9.]+)%\)/);
+                if (match) {
+                    wheelTranslatePercent = parseFloat(match[1]);
+                    isProfileVisible = wheelTranslatePercent < 50;
+                } else {
+                    isProfileVisible = domOpen;
+                    wheelTranslatePercent = domOpen ? 0 : 100;
+                }
+            } else {
+                // No inline transform, use class
+                isProfileVisible = domOpen;
+                wheelTranslatePercent = domOpen ? 0 : 100;
+            }
+
+            profileView.dataset.startOpen = isProfileVisible;
+            profileView.style.transition = 'none';
+
+            devLog.innerHTML = `<span style="font-size:12px;color:#00ff00;background:rgba(0,0,0,0.8);padding:4px;position:fixed;top:60px;left:10px;z-index:9999;">${dir} Swipe (${isProfileVisible ? 'Closing' : 'Opening'}) ${wheelTranslatePercent}%</span>`;
+        }
+
+        // Two-finger swipe LEFT (negative deltaX) = open profile (decrease % from 100 to 0)
+        // Two-finger swipe RIGHT (positive deltaX) = close profile (increase % from 0 to 100)
+        const sensitivity = 1.2;
+        wheelTranslatePercent -= (e.deltaX * sensitivity);
+
+        // Clamp between 0 (fully open) and 100 (fully closed)
+        wheelTranslatePercent = Math.max(0, Math.min(100, wheelTranslatePercent));
+        profileView.style.transform = `translateX(${wheelTranslatePercent}%)`;
+
+        // Clear previous timeout
+        if (wheelTimeout) clearTimeout(wheelTimeout);
+
+        // Snap to final position after gesture ends
+        wheelTimeout = setTimeout(() => {
+            wheelTimeout = null;
+            profileView.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+
+            const startedOpen = profileView.dataset.startOpen === 'true';
+            const threshold = 40; // 40% threshold for snapping
+
+            if (startedOpen) {
+                // Started open - should we close it?
+                if (wheelTranslatePercent > threshold) {
+                    hideProfile();
+                    devLog.innerHTML = `<span style="font-size:12px;color:#ff0000;background:rgba(0,0,0,0.8);padding:4px;position:fixed;top:60px;left:10px;z-index:9999;">✓ Profile Kapatıldı (Playable)</span>`;
+                } else {
+                    showProfile();
+                    devLog.innerHTML = `<span style="font-size:12px;color:#00ff00;background:rgba(0,0,0,0.8);padding:4px;position:fixed;top:60px;left:10px;z-index:9999;">✓ Profile Açık</span>`;
+                }
+            } else {
+                // Started closed - should we open it?
+                if (wheelTranslatePercent < (100 - threshold)) {
+                    showProfile();
+                    devLog.innerHTML = `<span style="font-size:12px;color:#00ff00;background:rgba(0,0,0,0.8);padding:4px;position:fixed;top:60px;left:10px;z-index:9999;">✓ Profile Açıldı</span>`;
+                } else {
+                    hideProfile();
+                    devLog.innerHTML = `<span style="font-size:12px;color:#ff0000;background:rgba(0,0,0,0.8);padding:4px;position:fixed;top:60px;left:10px;z-index:9999;">✓ Playable (Kapalı)</span>`;
+                }
+            }
+
+            // Clear debug message after a moment
+            setTimeout(() => {
+                if (devLog.innerHTML.includes('✓')) {
+                    devLog.innerHTML = '-';
+                }
+            }, 1500);
+        }, 100);
+    }
+    // Allow vertical scrolling with two fingers at all times
+}
+
+// Ensure these functions update the Global State
+function showProfile() {
+    isProfileVisible = true;
+    wheelTranslatePercent = 0; // Explicitly set to 0%
+    profileView.style.transform = 'translateX(0%)';
+    profileView.classList.remove('hidden-right');
+}
+
+function hideProfile() {
+    isProfileVisible = false;
+    wheelTranslatePercent = 100; // Explicitly set to 100%
+    profileView.style.transform = 'translateX(100%)';
+    profileView.classList.add('hidden-right');
 }
 
 // Unified Pointer Handler
@@ -284,6 +644,10 @@ function handlePointerStart(e, sourceFrame = null) {
     // Disable Snap for smooth dragging
     feedContainer.style.scrollSnapType = 'none';
     feedContainer.style.scrollBehavior = 'auto'; // Disable smooth scroll for direct manipulation
+
+    gestureStartX = pos.x;
+    gestureStartY = pos.y;
+    isSwipeLocked = false;
 }
 
 function handleTouchMove(e) {
@@ -309,44 +673,9 @@ function handlePointerMove(e) {
     const dx = currentX - touchStartX;
     const dy = currentY - touchStartY;
 
-    // Direction Locking
-    if (!isScrollingGesture && !isInteractingGesture) {
-        const absX = Math.abs(dx);
-        const absY = Math.abs(dy);
-
-        // Threshold to decide intent (e.g. 5-10px)
-        if (Math.max(absX, absY) > 6) {
-            if (absY > absX * 1.5) {
-                // Vertical -> Scroll
-                isScrollingGesture = true;
-                logDev("Gesture: Scroll");
-            } else if (absX > absY) {
-                // Horizontal -> Interaction (Game or Swipe)
-                isInteractingGesture = true;
-                logDev("Gesture: Interactive");
-            }
-        }
-    }
-
-    if (isScrollingGesture) {
-        // We are scrolling, so we manually scroll the feed
-        // Prevent default to stop game from thinking it's a swipe
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation(); // Stop propagation
-
-        feedContainer.scrollTop -= dy;
-
-        // Reset start for next delta
-        touchStartX = currentX;
-        touchStartY = currentY;
-    }
-    // If isInteractingGesture, we do NOTHING here.
-    // We let the event propagate to the game (if source was iframe) 
-    // or we handle swipe logic (if source was edge).
-}
-
-function handleTouchEnd(e) {
-    handlePointerEnd(e);
+    // All click-and-drag gestures are disabled
+    // Users can only interact with the game via clicks
+    // Navigation (vertical and horizontal) requires two-finger trackpad scroll
 }
 
 function handlePointerEnd(e) {
@@ -358,48 +687,23 @@ function handlePointerEnd(e) {
     feedContainer.style.scrollSnapType = 'y mandatory';
     feedContainer.style.scrollBehavior = 'smooth';
 
-    // Only handling Horizontal Swipes (Profile/Store) if we decided it was an Interaction
-    if (isInteractingGesture) {
-        // Logic for opening profile etc is optional here if we want to support it over the game
-        // But usually we want game to handle horizontal.
-        // EXCEPT event listener was attached to capture...
+    // Re-enable transition for snap
+    profileView.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
 
-        // If capture was true, we might have prevented default if we deemed it a scroll.
-        // But if it was interaction, we let it bubble.
+    // All click-and-drag gestures are disabled
+    // Only two-finger trackpad scroll works for navigation
 
-        // If it was an Edge Zone touch, we definitely handle it.
-        if (isInteractingGesture) {
-            // Calculate final delta
-            let endX = touchStartX; // Default to last known if no changedTouches
-            let endY = touchStartY;
-
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                endX = e.changedTouches[0].screenX;
-                endY = e.changedTouches[0].screenY;
-            } else {
-                // For mouse, we use the last position from move, 
-                // but since we updated touchStart in move, this logic is slightly flawed for swipe detection
-                // standard swipe detection usually keeps ORIGINAL start.
-                // Let's rely on simple dx/dy tracking if we want perfect swipes, 
-                // but for now, let's just use what we have. 
-                // The `touchStartX` is updated during Scroll, but NOT during Interaction?
-                // Wait, line 298 updates touchStartX. 
-                // Only if isScrollingGesture.
-                // If isInteractingGesture, we DO NOT update touchStartX.
-                // So touchStartX is still the ORIGINAL start.
-                endX = e.screenX;
-                endY = e.screenY;
-            }
-
-            const dx = endX - touchStartX;
-            const dy = endY - touchStartY;
-
-            // For mouse 'mouseup', e.screenX is valid.
-
-            handleSwipe(dx, dy);
-        }
-    }
+    // Safety cleanup
+    touchStartX = 0;
+    touchStartY = 0;
+    isScrollingGesture = false;
+    isInteractingGesture = false;
 }
+
+
+
+function scrollToNext() { scrollToIndex(currentIndex + 1); }
+function scrollToPrev() { scrollToIndex(currentIndex - 1); }
 
 // Inject listeners into Iframe
 function attachIframeListeners(iframe) {
@@ -412,9 +716,31 @@ function attachIframeListeners(iframe) {
         // Use Capture Phase to see events BEFORE the game does
         const opts = { capture: true, passive: false };
 
-        iWindow.addEventListener('touchstart', (e) => handleTouchStart(e, iframe), opts);
-        iWindow.addEventListener('touchmove', (e) => handleTouchMove(e), opts);
-        iWindow.addEventListener('touchend', (e) => handleTouchEnd(e), opts);
+        iWindow.addEventListener('touchstart', (e) => {
+            handleTouchStart(e, iframe);
+        }, opts);
+
+        iWindow.addEventListener('touchmove', (e) => {
+            handleTouchMove(e);
+        }, opts);
+
+        iWindow.addEventListener('touchend', (e) => handlePointerEnd(e), opts);
+        // Add Pointer Events support
+        iWindow.addEventListener('pointerdown', (e) => {
+            handleTouchStart(e, iframe);
+        }, opts);
+        iWindow.addEventListener('pointermove', (e) => {
+            handleTouchMove(e);
+        }, opts);
+        iWindow.addEventListener('pointerup', (e) => handlePointerEnd(e), opts);
+
+        // Trackpad / Wheel Support
+        iWindow.addEventListener('wheel', (e) => {
+            // Forward or handle directly
+            // Since we use a global handler, we can just call it
+            // ensuring we fix the context if needed, but handleWheel uses global state.
+            handleWheel(e);
+        }, opts);
 
     } catch (err) {
         console.error("Cannot access iframe", err);
@@ -429,50 +755,16 @@ function attachEdgeListeners() {
         const opts = { passive: false };
         zone.addEventListener('touchstart', (e) => handleTouchStart(e, null), opts);
         zone.addEventListener('touchmove', handleTouchMove, opts);
-        zone.addEventListener('touchend', handleTouchEnd, opts);
+        zone.addEventListener('touchend', handlePointerEnd, opts);
     });
 }
 // Old pointer events for mouse are less critical for mobile-first demo but we can keep minimal mouse support if needed
 // For now focusing on Touch as requested.
 
 // Profile Logic
-function showProfile() {
-    profileView.classList.remove('hidden-right');
-    // Update Nav
-    navProfile.classList.add('active');
-    navHome.classList.remove('active');
-}
 
-function hideProfile() {
-    profileView.classList.add('hidden-right');
-    // Update Nav
-    navProfile.classList.remove('active');
-    navHome.classList.add('active');
-}
 
-function handleSwipe(dx, dy) {
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60) {
-        if (dx < 0) {
-            // Finger moves LEFT (<---)
-            // Swipe Left - User asked to DISABLE profile opening here.
-            // We can just do nothing or show "Not Interested" toast.
-            // For now, let's keep it safe and just log or do nothing, or maybe "Next Video"?
-            // Let's bring back "Not Interested" toast behavior or just nothing.
-            logDev("Swipe Left - No Action");
-        } else {
-            // Finger moves RIGHT (--->)
-            // If Profile is Open -> Close Profile
-            if (!profileView.classList.contains('hidden-right')) {
-                hideProfile();
-            } else {
-                // On Main Feed -> Open Store
-                const item = config.playables[currentIndex];
-                showToast("Opening App Store...");
-                window.open(item.storeUrl, '_blank');
-            }
-        }
-    }
-}
+
 
 function scrollToIndex(index) {
     if (index >= 0 && index < config.playables.length) {

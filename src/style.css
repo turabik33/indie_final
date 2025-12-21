@@ -20,6 +20,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  overscroll-behavior-x: none;
+  /* Prevent browser back swipe */
 }
 
 /* Dev Panel */
@@ -383,47 +385,7 @@ body {
   opacity: 0.9;
 }
 
-/* Bottom Navigation */
-.bottom-nav {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 60px;
-  /* If changing this, update padding-bottom in profile-view */
-  background: black;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 900;
-  /* Ensure it is above Profile View (800) */
-  pointer-events: auto;
-}
 
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  cursor: pointer;
-  width: 50%;
-  height: 100%;
-}
-
-.nav-item.active {
-  color: white;
-}
-
-.nav-icon {
-  font-size: 24px;
-  margin-bottom: 2px;
-}
-
-.nav-label {
-  font-size: 10px;
-  font-weight: 600;
-}
 
 /* Profile View */
 #profile-view {
@@ -437,9 +399,10 @@ body {
   overflow-y: auto;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   color: white;
-  padding-bottom: 60px;
-  /* Make space for persistent bottom nav */
+  /* padding-bottom removed as bottom nav is gone */
   box-sizing: border-box;
+  overscroll-behavior: none;
+  /* Critical for handling horizontal swipes manually */
 }
 
 .hidden-right {
@@ -584,4 +547,100 @@ body {
 .grid-item {
   aspect-ratio: 3/4;
   background-color: #222;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.grid-item:hover {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.grid-item:active {
+  transform: scale(0.9);
+}
+
+/* Grid Overlay */
+.grid-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.grid-play-icon {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  color: white;
+  font-size: 14px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  z-index: 2;
+}
+
+.grid-label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  /* background: rgba(0, 0, 0, 0.6);  Removed background in favor of gradient */
+  padding: 4px 4px;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+/* Empty State for Likes */
+.empty-likes-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.empty-likes-state p {
+  margin: 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-subtitle {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  opacity: 0.7;
+}
+
+/* Heart icon in like button */
+.heart-icon {
+  transition: color 0.3s ease;
+}
+
+/* Repost Icon */
+.repost-icon {
+  font-size: 28px !important;
+  /* Slightly smaller than heart usually */
+  transition: color 0.3s ease;
+}
+
+.repost-active {
+  color: #00e676 !important;
+  /* Green color for repost */
 }

@@ -43,8 +43,8 @@
                                     alt="Avatar">
                             </div>
                             <div class="profile-names">
-                                <h2 class="display-name">Indie Match</h2>
-                                <p class="username-tag">@IndieMatch</p>
+                                <h2 class="display-name">Developer</h2>
+                                <p class="username-tag">@developer</p>
                             </div>
                             <div class="profile-stats">
                                 <div class="stat-box">
@@ -61,7 +61,7 @@
                                 </div>
                             </div>
                             <div class="profile-bio">
-                                Discovering the best indie vibes! 🎮✨ <br>
+                                Building the future of indie games! 🛠️ <br>
                                 Play nicely.
                             </div>
                             <div class="profile-actions">
@@ -72,18 +72,12 @@
                     </div>
 
                     <div class="profile-tabs">
-                        <div class="tab active">Videos</div>
-                        <div class="tab">Likes</div>
-                        <div class="tab">Private</div>
+                        <div class="tab active" data-tab="likes">Likes</div>
+                        <div class="tab" data-tab="reposts">Reposts</div>
                     </div>
 
                     <div class="video-grid">
-                        <div class="grid-item" style="background-color: #333"></div>
-                        <div class="grid-item" style="background-color: #444"></div>
-                        <div class="grid-item" style="background-color: #555"></div>
-                        <div class="grid-item" style="background-color: #666"></div>
-                        <div class="grid-item" style="background-color: #777"></div>
-                        <div class="grid-item" style="background-color: #888"></div>
+                        <!-- Grid items will be dynamically populated by JavaScript -->
                     </div>
                 </div>
 
@@ -113,6 +107,10 @@
                             <span class="icon">💬</span>
                             <span class="count">54K</span>
                         </div>
+                        <div class="action-item" id="repost-btn">
+                            <span class="icon repost-icon">↻</span>
+                            <span class="count">21K</span>
+                        </div>
                         <div class="action-item">
                             <span class="icon">↗</span>
                             <span class="count">Share</span>
@@ -128,17 +126,7 @@
                     </div>
                 </div>
 
-                <!-- Bottom Nav (Moved outside UI overlay to be on top) -->
-                <div class="bottom-nav">
-                    <div class="nav-item active" id="nav-home">
-                        <span class="nav-icon">🏠</span>
-                        <span class="nav-label">Home</span>
-                    </div>
-                    <div class="nav-item" id="nav-profile">
-                        <span class="nav-icon">👤</span>
-                        <span class="nav-label">Profile</span>
-                    </div>
-                </div>
+
 
                 <!-- Global Toast -->
                 <div id="toast" class="hidden"></div>
