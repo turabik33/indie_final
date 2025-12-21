@@ -29,12 +29,75 @@
                 <div id="edge-zone-right" class="edge-zone"></div>
 
                 <!-- UI Overlay (Static for now, could be dynamic per item if needed) -->
+                <!-- Profile View (Initially Hidden) -->
+                <div id="profile-view" class="hidden-right">
+                    <div class="profile-header">
+                        <div class="nav-bar">
+                            <span class="back-btn" id="profile-back">‹</span>
+                            <span class="title">Profile</span>
+                            <span class="settings-icon">≡</span>
+                        </div>
+                        <div class="profile-info">
+                            <div class="profile-avatar">
+                                <img src="https://ui-avatars.com/api/?name=Indie+Match&background=fe2c55&color=fff"
+                                    alt="Avatar">
+                            </div>
+                            <div class="profile-names">
+                                <h2 class="display-name">Indie Match</h2>
+                                <p class="username-tag">@IndieMatch</p>
+                            </div>
+                            <div class="profile-stats">
+                                <div class="stat-box">
+                                    <span class="num">142</span>
+                                    <span class="label">Following</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="num">8.2M</span>
+                                    <span class="label">Followers</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="num">1.4B</span>
+                                    <span class="label">Likes</span>
+                                </div>
+                            </div>
+                            <div class="profile-bio">
+                                Discovering the best indie vibes! 🎮✨ <br>
+                                Play nicely.
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn-primary">Follow</button>
+                                <button class="btn-secondary">Message</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-tabs">
+                        <div class="tab active">Videos</div>
+                        <div class="tab">Likes</div>
+                        <div class="tab">Private</div>
+                    </div>
+
+                    <div class="video-grid">
+                        <div class="grid-item" style="background-color: #333"></div>
+                        <div class="grid-item" style="background-color: #444"></div>
+                        <div class="grid-item" style="background-color: #555"></div>
+                        <div class="grid-item" style="background-color: #666"></div>
+                        <div class="grid-item" style="background-color: #777"></div>
+                        <div class="grid-item" style="background-color: #888"></div>
+                    </div>
+                </div>
+
                 <div id="ui-overlay">
+                    <!-- Audio Toggle -->
+                    <div id="sound-control" class="sound-control">
+                        <span class="sound-icon">🔇</span>
+                    </div>
+
                     <!-- Top Header -->
                     <div class="top-header">
-                        <span class="tab inactive">Following</span>
+                        <span class="tab inactive" id="tab-following">Following</span>
                         <span class="separator">|</span>
-                        <span class="tab active">For You</span>
+                        <span class="tab active" id="tab-foryou">For You</span>
                     </div>
 
                     <!-- Right Action Bar -->
@@ -42,8 +105,8 @@
                         <div class="action-item">
                             <div class="icon-circle profile-pic"></div>
                         </div>
-                        <div class="action-item">
-                            <span class="icon">♥</span>
+                        <div class="action-item" id="like-btn">
+                            <span class="icon heart-icon">♥</span>
                             <span class="count">8.2M</span>
                         </div>
                         <div class="action-item">
@@ -62,6 +125,18 @@
                         <div class="description">Swipe right to play nicely! <span class="tag">#demo</span> <span
                                 class="tag">#gaming</span></div>
                         <div class="music-note">♫ Original Sound - IndieMatch Demo</div>
+                    </div>
+                </div>
+
+                <!-- Bottom Nav (Moved outside UI overlay to be on top) -->
+                <div class="bottom-nav">
+                    <div class="nav-item active" id="nav-home">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-label">Home</span>
+                    </div>
+                    <div class="nav-item" id="nav-profile">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-label">Profile</span>
                     </div>
                 </div>
 

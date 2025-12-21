@@ -3,8 +3,8 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <script>window.sensor_tower_artifacts = ["/index.html", "/o1faef40/730d60646e845712bc4101661eedd58345f01709_v1_js_load.js"];</script>
-  <script src="./royalmatch_files/network_rewriting.js"></script>
+  <script>window.sensor_tower_artifacts = ["index.html", "royalmatch_files/730d60646e845712bc4101661eedd58345f01709_v1_js_load.js"];</script>
+  <!-- <script src="./royalmatch_files/network_rewriting.js"></script> -->
   <script src="./royalmatch_files/mraid.js"></script>
   <script type="text/javascript" src="./royalmatch_files/mraid.js"></script>
 </head>
@@ -12,7 +12,10 @@
 <body style="margin:0;border:0">
   <script>
     function al_renderHtml(data) {
-      document.write(data.html);
+      if (!data || !data.html) return;
+      var blob = new Blob([data.html], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      location.replace(url);
     }
   </script>
   <script type="text/javascript" charset="UTF-8"

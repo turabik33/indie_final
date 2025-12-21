@@ -16,6 +16,11 @@ export const config = {
             id: 'p3',
             path: '/playables/p3/index.html',
             storeUrl: 'https://apps.apple.com/tr/app/wiggle-escape-snake-puzzle/id6751716734?l=tr'
+        },
+        {
+            id: 'p4',
+            path: '/playables/p4/index.html',
+            storeUrl: 'https://apps.apple.com/us/app/neon-dodger-fake-link'
         }
     ]
 };
