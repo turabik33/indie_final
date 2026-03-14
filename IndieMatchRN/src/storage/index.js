@@ -4,8 +4,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LIKES_KEY = 'indieMatchLikes';
+const LIKES_KEY   = 'indieMatchLikes';
 const REPOSTS_KEY = 'indieMatchReposts';
+const SAVED_KEY   = 'indieMatchSaved';
 
 /** Load liked playable IDs. Returns a Set<string>. */
 export async function loadLikes() {
@@ -50,5 +51,28 @@ export async function saveReposts(repostedSet) {
         await AsyncStorage.setItem(REPOSTS_KEY, JSON.stringify(Array.from(repostedSet)));
     } catch (e) {
         console.error('[Storage] Error saving reposts:', e);
+    }
+}
+
+/** Load saved/bookmarked playable IDs. Returns a Set<string>. */
+export async function loadSaved() {
+    try {
+        const stored = await AsyncStorage.getItem(SAVED_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            return new Set(Array.isArray(parsed) ? parsed : []);
+        }
+    } catch (e) {
+        console.error('[Storage] Error loading saved:', e);
+    }
+    return new Set();
+}
+
+/** Save bookmarked playable IDs from a Set<string>. */
+export async function saveSaved(savedSet) {
+    try {
+        await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(Array.from(savedSet)));
+    } catch (e) {
+        console.error('[Storage] Error saving saved:', e);
     }
 }

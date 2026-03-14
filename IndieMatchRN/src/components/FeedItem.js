@@ -9,8 +9,11 @@
 import React, { useRef, useState } from 'react';
 import {
     View, Text, TouchableOpacity, StyleSheet, Dimensions,
-    Animated, Image,
+    Animated, Image, Modal, ScrollView, TextInput,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PlayableCard from './PlayableCard';
 import Toast from './Toast';
 
@@ -19,7 +22,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 export const TAB_BAR_HEIGHT = 60;
 export const ITEM_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
 
-const ENGAGEMENT_BAR_HEIGHT = 48;
+const ENGAGEMENT_BAR_HEIGHT = 52;
 const CREATOR_BAR_HEIGHT = 52;
 
 // Heart animation shown on double-tap
@@ -55,18 +58,23 @@ export default function FeedItem({
     isMounted,
     isMuted,
     isLiked,
+    isSaved,
     isReposted,
     uri,
     webViewRef,
     onLike,
+    onSave,
     onRepost,
     onSoundToggle,
     toastMsg,
     toastVisible,
     onNavigateProfile,
 }) {
+    const { top: topInset } = useSafeAreaInsets();
     const [hearts, setHearts] = useState([]);
     const lastTapRef = useRef(0);
+    const [showComments, setShowComments] = useState(false);
+    const [showShare, setShowShare] = useState(false);
 
     const username = `@${(item.creator || item.publisher || 'indie').replace(/\s+/g, '').toLowerCase()}`;
     const title = item.title || item.gameName || 'Indie Game';
@@ -88,20 +96,8 @@ export default function FeedItem({
 
     return (
         <View style={styles.container}>
-            {/* ── Floating top bar ───────────────────────────────────────── */}
-            <View style={styles.topBar} pointerEvents="box-none">
-                <View style={styles.topHeader} pointerEvents="none">
-                    <Text style={styles.tabInactive}>Following</Text>
-                    <Text style={styles.separator}> | </Text>
-                    <Text style={styles.tabActive}>For You</Text>
-                </View>
-                <TouchableOpacity style={styles.soundControl} onPress={onSoundToggle}>
-                    <Text style={styles.soundIcon}>{isMuted ? '🔇' : '🔊'}</Text>
-                </TouchableOpacity>
-            </View>
-
             {/* ── Game area (WebView) ────────────────────────────────────── */}
-            <View style={styles.gameArea} onTouchEnd={handleDoubleTap}>
+            <View style={[styles.gameArea, { marginTop: topInset }]} onTouchEnd={handleDoubleTap}>
                 {isMounted && uri ? (
                     <PlayableCard
                         ref={webViewRef}
@@ -120,29 +116,122 @@ export default function FeedItem({
 
             {/* ── Engagement bar ─────────────────────────────────────────── */}
             <View style={styles.engagementBar}>
+                {/* Left: heart + count, comment, bookmark */}
                 <View style={styles.engLeft}>
                     <TouchableOpacity style={styles.engBtn} onPress={onLike}>
-                        <Text style={[styles.engIcon, isLiked && styles.iconLiked]}>♥</Text>
-                        <Text style={styles.engCount}>{item.likes || '0'}</Text>
+                        <Ionicons
+                            name={isLiked ? 'heart' : 'heart-outline'}
+                            size={23}
+                            color={isLiked ? '#FF3040' : '#fff'}
+                        />
+                        <Text style={[styles.engCount, isLiked && styles.countLiked]}>
+                            {item.likes || '0'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.engBtn}>
-                        <Text style={styles.engIcon}>💬</Text>
-                        <Text style={styles.engCount}>{item.comments || '0'}</Text>
+                    <TouchableOpacity style={styles.engBtn} onPress={() => setShowComments(true)}>
+                        <Feather name="message-circle" size={22} color="#fff" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.engBtn}>
-                        <Text style={styles.engIcon}>🔖</Text>
-                        <Text style={styles.engCount}>Save</Text>
+                    <TouchableOpacity style={styles.engBtn} onPress={onSave}>
+                        <Ionicons
+                            name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                            size={22}
+                            color={isSaved ? '#F59E0B' : '#fff'}
+                        />
                     </TouchableOpacity>
                 </View>
+
+                {/* Right: repost + count, send */}
                 <View style={styles.engRight}>
-                    <TouchableOpacity style={styles.engBtn}>
-                        <Text style={styles.engIcon}>⊙</Text>
+                    <TouchableOpacity style={styles.engBtn} onPress={onRepost}>
+                        <Feather
+                            name="repeat"
+                            size={22}
+                            color={isReposted ? '#4ADE80' : '#fff'}
+                        />
+                        <Text style={[styles.engCount, isReposted && styles.repostCount]}>
+                            {item.reposts || '0'}
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.engBtn}>
-                        <Text style={styles.engIcon}>↗</Text>
+                    <TouchableOpacity style={styles.engBtn} onPress={() => setShowShare(true)}>
+                        <Feather name="send" size={22} color="#fff" />
                     </TouchableOpacity>
                 </View>
             </View>
+
+            {/* ── Comments modal ─────────────────────────────────────────── */}
+            <Modal
+                visible={showComments}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowComments(false)}
+            >
+                <TouchableOpacity
+                    style={modalStyles.backdrop}
+                    activeOpacity={1}
+                    onPress={() => setShowComments(false)}
+                />
+                <View style={modalStyles.sheet}>
+                    <View style={modalStyles.handle} />
+                    <Text style={modalStyles.sheetTitle}>Yorumlar</Text>
+                    <ScrollView style={modalStyles.scrollArea} contentContainerStyle={modalStyles.emptyContainer}>
+                        <Text style={modalStyles.emptyText}>Henüz yorum yok</Text>
+                    </ScrollView>
+                    <View style={modalStyles.inputRow}>
+                        <View style={modalStyles.inputAvatar} />
+                        <TextInput
+                            style={modalStyles.textInput}
+                            placeholder="Yorum ekle..."
+                            placeholderTextColor="rgba(255,255,255,0.4)"
+                            color="#fff"
+                        />
+                        <TouchableOpacity onPress={() => setShowComments(false)}>
+                            <Text style={modalStyles.sendBtn}>Gönder</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* ── Share modal ────────────────────────────────────────────── */}
+            <Modal
+                visible={showShare}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowShare(false)}
+            >
+                <TouchableOpacity
+                    style={modalStyles.backdrop}
+                    activeOpacity={1}
+                    onPress={() => setShowShare(false)}
+                />
+                <View style={modalStyles.sheet}>
+                    <View style={modalStyles.handle} />
+                    <Text style={modalStyles.sheetTitle}>Gönder</Text>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={modalStyles.friendsRow}
+                        contentContainerStyle={{ gap: 20, paddingHorizontal: 20 }}
+                    >
+                        {['Arkadaş 1', 'Arkadaş 2', 'Arkadaş 3', 'Arkadaş 4'].map((name) => (
+                            <View key={name} style={modalStyles.friendItem}>
+                                <View style={modalStyles.friendAvatar} />
+                                <Text style={modalStyles.friendName} numberOfLines={1}>{name}</Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                    <View style={modalStyles.inputRow}>
+                        <TextInput
+                            style={[modalStyles.textInput, { flex: 1 }]}
+                            placeholder="Mesaj ekle..."
+                            placeholderTextColor="rgba(255,255,255,0.4)"
+                            color="#fff"
+                        />
+                        <TouchableOpacity onPress={() => setShowShare(false)}>
+                            <Text style={modalStyles.sendBtn}>Gönder</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* ── Creator info bar ──────────────────────────────────────── */}
             <View style={styles.creatorBar}>
@@ -155,12 +244,6 @@ export default function FeedItem({
                         <Text style={styles.creatorDesc} numberOfLines={1}>{title}</Text>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.repostBtn} onPress={onRepost}>
-                    <Text style={[styles.repostIcon, isReposted && styles.repostActive]}>🔁</Text>
-                    <Text style={[styles.repostCount, isReposted && styles.repostActive]}>
-                        {item.reposts || '0'}
-                    </Text>
-                </TouchableOpacity>
             </View>
         </View>
     );
@@ -227,6 +310,8 @@ const styles = StyleSheet.create({
     gameArea: {
         flex: 1,
         backgroundColor: '#000',
+        borderRadius: 20,
+        overflow: 'hidden',
     },
     placeholder: {
         flex: 1,
@@ -246,45 +331,44 @@ const styles = StyleSheet.create({
     // ── Engagement bar ────────────────────────────────────────────────────
     engagementBar: {
         height: ENGAGEMENT_BAR_HEIGHT,
-        backgroundColor: '#111',
+        backgroundColor: '#000',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
     },
     engLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 20,
+        gap: 16,
     },
     engRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 14,
+        gap: 16,
     },
     engBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 5,
     },
-    engIcon: {
-        fontSize: 17,
+    engCount: {
+        fontSize: 13,
+        fontWeight: '600',
         color: '#fff',
     },
-    engCount: {
-        fontSize: 11,
-        color: '#ccc',
+    countLiked: {
+        color: '#FF3040',
     },
-    iconLiked: {
-        color: '#fe2c55',
+    repostCount: {
+        color: '#4ADE80',
     },
 
     // ── Creator info bar ──────────────────────────────────────────────────
     creatorBar: {
         height: CREATOR_BAR_HEIGHT,
-        backgroundColor: '#0a0a0a',
-        borderTopWidth: 1,
-        borderTopColor: '#1a1a1a',
+        backgroundColor: '#000',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -332,5 +416,96 @@ const styles = StyleSheet.create({
     },
     repostActive: {
         color: '#00e676',
+    },
+});
+
+const modalStyles = StyleSheet.create({
+    backdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    sheet: {
+        backgroundColor: '#1C1C1E',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingBottom: 32,
+        minHeight: 320,
+    },
+    handle: {
+        width: 40,
+        height: 4,
+        backgroundColor: '#3A3A3C',
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginTop: 10,
+        marginBottom: 4,
+    },
+    sheetTitle: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+        textAlign: 'center',
+        paddingTop: 16,
+        paddingBottom: 12,
+    },
+    scrollArea: {
+        minHeight: 120,
+        maxHeight: 240,
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    emptyText: {
+        color: '#8E8E93',
+        fontSize: 14,
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        gap: 10,
+    },
+    inputAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#3A3A3C',
+    },
+    textInput: {
+        flex: 1,
+        backgroundColor: '#2C2C2E',
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        fontSize: 14,
+        color: '#fff',
+    },
+    sendBtn: {
+        color: '#4ADE80',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    friendsRow: {
+        paddingVertical: 16,
+    },
+    friendItem: {
+        alignItems: 'center',
+        width: 60,
+    },
+    friendAvatar: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: '#3A3A3C',
+        marginBottom: 6,
+    },
+    friendName: {
+        color: '#fff',
+        fontSize: 11,
+        textAlign: 'center',
     },
 });

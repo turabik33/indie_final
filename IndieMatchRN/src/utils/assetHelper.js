@@ -30,10 +30,38 @@ const ASSET_MANIFEST = [
     { module: require('../../assets/playables/p1/Block Blast_files/mraid.jsa'), dest: 'p1/Block Blast_files/mraid.js' },
     { module: require('../../assets/playables/p1/Block Blast_files/network_rewriting.jsa'), dest: 'p1/Block Blast_files/network_rewriting.js' },
     { module: require('../../assets/playables/p1/Block Blast_files/7eb73a43de84059940641cd8347feff12e87f00e_v1_js_load.jsa'), dest: 'p1/Block Blast_files/7eb73a43de84059940641cd8347feff12e87f00e_v1_js_load.js' },
+
+    // ── p5: main + Arrows_files/ ─────────────────────────────────────────────
+    { module: require('../../assets/playables/p5/index.html'), dest: 'p5/index.html' },
+    { module: require('../../assets/playables/p5/Arrows_files/mraid.jsa'), dest: 'p5/Arrows_files/mraid.js' },
+    { module: require('../../assets/playables/p5/Arrows_files/network_rewriting.jsa'), dest: 'p5/Arrows_files/network_rewriting.js' },
+    { module: require('../../assets/playables/p5/Arrows_files/67ecc4c27b02692ff42ab2ad7fa9857176882748_v1_js_load.jsa'), dest: 'p5/Arrows_files/67ecc4c27b02692ff42ab2ad7fa9857176882748_v1_js_load.js' },
+
+    // ── p6: main + Goods_Sort_files/ ─────────────────────────────────────────
+    { module: require('../../assets/playables/p6/index.html'), dest: 'p6/index.html' },
+    { module: require('../../assets/playables/p6/Goods_Sort_files/mraid.jsa'), dest: 'p6/Goods_Sort_files/mraid.js' },
+
+    // ── p7: main + Jigsaw_Puzzle_files/ ──────────────────────────────────────
+    { module: require('../../assets/playables/p7/index.html'), dest: 'p7/index.html' },
+    { module: require('../../assets/playables/p7/Jigsaw_Puzzle_files/mraid.jsa'), dest: 'p7/Jigsaw_Puzzle_files/mraid.js' },
+    { module: require('../../assets/playables/p7/Jigsaw_Puzzle_files/network_rewriting.jsa'), dest: 'p7/Jigsaw_Puzzle_files/network_rewriting.js' },
+    { module: require('../../assets/playables/p7/Jigsaw_Puzzle_files/f9de172306f980a979edcf46fe96eb636b1627f9_v1_js_load.jsa'), dest: 'p7/Jigsaw_Puzzle_files/f9de172306f980a979edcf46fe96eb636b1627f9_v1_js_load.js' },
+
+    // ── p8: main + Magic_Sort_files/ ─────────────────────────────────────────
+    { module: require('../../assets/playables/p8/index.html'), dest: 'p8/index.html' },
+    { module: require('../../assets/playables/p8/Magic_Sort_files/mraid.jsa'), dest: 'p8/Magic_Sort_files/mraid.js' },
+    { module: require('../../assets/playables/p8/Magic_Sort_files/network_rewriting.jsa'), dest: 'p8/Magic_Sort_files/network_rewriting.js' },
+    { module: require('../../assets/playables/p8/Magic_Sort_files/16dc92c991abd2855d0e4024fb87dcb4fb788383_v1_js_load.jsa'), dest: 'p8/Magic_Sort_files/16dc92c991abd2855d0e4024fb87dcb4fb788383_v1_js_load.js' },
+
+    // ── p9: main + Pixel_Flow_files/ ─────────────────────────────────────────
+    { module: require('../../assets/playables/p9/index.html'), dest: 'p9/index.html' },
+    { module: require('../../assets/playables/p9/Pixel_Flow_files/mraid.jsa'), dest: 'p9/Pixel_Flow_files/mraid.js' },
+    { module: require('../../assets/playables/p9/Pixel_Flow_files/network_rewriting.jsa'), dest: 'p9/Pixel_Flow_files/network_rewriting.js' },
+    { module: require('../../assets/playables/p9/Pixel_Flow_files/e1c88d34e9c62a322c9ba3ea326ac5830df03043_v1_js_load.jsa'), dest: 'p9/Pixel_Flow_files/e1c88d34e9c62a322c9ba3ea326ac5830df03043_v1_js_load.js' },
 ];
 
 export const BASE_DIR = FileSystem.documentDirectory + 'playables/';
-const SENTINEL = BASE_DIR + '_ready_v6'; // v6: force re-copy with verification
+const SENTINEL = BASE_DIR + '_ready_v7'; // v7: added p5-p9 (Arrows, Goods Sort, Jigsaw, Magic Sort, Pixel Flow)
 
 /**
  * Returns the Metro dev server base URL (e.g. "http://192.168.1.5:8081")
